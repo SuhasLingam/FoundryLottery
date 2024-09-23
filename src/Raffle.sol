@@ -25,6 +25,7 @@
 pragma solidity ^0.8.18;
 
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
 /**
  * @title A Sample Raffle Contract
@@ -33,24 +34,37 @@ import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFCo
  * @dev Implements Chainlink VRFv2.5
  */
 
-contract Raffle {
+contract Raffle is VRFConsumerBaseV2Plus {
     /* Errors */
     error Raffle__SendMoreToEnterRaffle();
     error Raffle__StillTimeLeftToAnnounceWinners();
 
-    /** Storage Variables */
+    uint32 private constant MAX_WORDS = 1;
+    uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint256 private immutable i_entranceFee;
-    //Raffle End time in Seconds
     uint256 private immutable i_inteval;
+    bytes32 private immutable i_keyHash;
+    uint256 private immutable i_subscriptionID;
+    uint32 private immutable i_gasLimit;
     uint256 private s_lastTimeStamp;
     address payable[] private s_players;
 
     /**Events */
     event RaffleEntered(address indexed player);
 
-    constructor(uint256 entranceFee, uint256 _interval) {
+    constructor(
+        uint256 entranceFee,
+        uint256 _interval,
+        address vrfCoordinator,
+        uint256 subcriptionID,
+        bytes32 keyhash,
+        uint32 gasLimit
+    ) VRFConsumerBaseV2Plus(vrfCoordinator) {
         i_entranceFee = entranceFee;
         i_inteval = _interval;
+        i_keyHash = keyhash;
+        i_gasLimit = gasLimit;
+        i_subscriptionID = subcriptionID;
         s_lastTimeStamp = block.timestamp;
     }
 
@@ -70,21 +84,25 @@ contract Raffle {
             Raffle__StillTimeLeftToAnnounceWinners()
         );
 
-        // requestId = s_vrfCoordinator.requestRandomWords(
-        //     VRFV2PlusClient.RandomWordsRequest({
-        //         keyHash: keyHash,
-        //         subId: s_subscriptionId,
-        //         requestConfirmations: requestConfirmations,
-        //         callbackGasLimit: callbackGasLimit,
-        //         numWords: numWords,
-        //         extraArgs: VRFV2PlusClient._argsToBytes(
-        //             VRFV2PlusClient.ExtraArgsV1({
-        //                 nativePayment: enableNativePayment
-        //             })
-        //         )
-        //     })
-        // );
+        VRFV2PlusClient.RandomWordsRequest memory request = VRFV2PlusClient
+            .RandomWordsRequest({
+                keyHash: i_keyHash,
+                subId: i_subscriptionID,
+                requestConfirmations: REQUEST_CONFIRMATIONS,
+                callbackGasLimit: i_gasLimit,
+                numWords: MAX_WORDS,
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
+                )
+            });
+
+        uint256 requestID = s_vrfCoordinator.requestRandomWords(request);
     }
+
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] calldata randomWords
+    ) internal override {}
 
     /**
      * Getter Functions
