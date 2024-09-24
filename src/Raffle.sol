@@ -85,6 +85,30 @@ contract Raffle is VRFConsumerBaseV2Plus {
         s_raffleStatus = RaffleStatus.OPEN;
     }
 
+    /**
+     * @dev This is the function that the Chainlink Keeper nodes call
+     * they look for `upkeepNeeded` to return True.
+     * the following should be true for this to return true:
+     * 1. The time interval has passed between raffle runs.
+     * 2. The lottery is open.
+     * 3. The contract has ETH.
+     * 4. There are players registered.
+     * 5. Implicity, your subscription is funded with LINK.
+     */
+
+    function checkUpkeep()
+        public
+        view
+        returns (bool upkeepNeeded, bytes memory /* performData */)
+    {
+        bool isOpen = s_raffleStatus == RaffleStatus.OPEN;
+        bool timePassed = (block.timestamp - s_lastTimeStamp) > i_inteval;
+        bool hasBalance = address(this).balance >= 0;
+        bool hasPlayers = s_players.length > 0;
+        upkeepNeeded = isOpen && timePassed && hasBalance && hasPlayers;
+        return (upkeepNeeded, "");
+    }
+
     function enterRaffle() external payable {
         require(msg.value >= i_entranceFee, Raffle__SendMoreToEnterRaffle());
         require(s_raffleStatus == RaffleStatus.OPEN, Raffle__RaffleNotOpen());
