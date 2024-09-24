@@ -40,6 +40,11 @@ contract Raffle is VRFConsumerBaseV2Plus {
     error Raffle__TransferToWinnerFailed();
     error Raffle__RaffleNotOpen();
     error Raffle__StillTimeLeftToAnnounceWinner();
+    error Raffle__UpKeepNotNeeded(
+        uint256 balance,
+        uint256 playersLength,
+        uint256 raffleState
+    );
 
     /** Type Decalrations */
 
@@ -96,13 +101,11 @@ contract Raffle is VRFConsumerBaseV2Plus {
      * 5. Implicity, your subscription is funded with LINK.
      */
 
-    function checkUpkeep()
-        public
-        view
-        returns (bool upkeepNeeded, bytes memory /* performData */)
-    {
+    function checkUpkeep(
+        bytes memory /* checkData */
+    ) public view returns (bool upkeepNeeded, bytes memory /* performData */) {
         bool isOpen = s_raffleStatus == RaffleStatus.OPEN;
-        bool timePassed = (block.timestamp - s_lastTimeStamp) > i_inteval;
+        bool timePassed = (block.timestamp - s_lastTimeStamp) >= i_inteval;
         bool hasBalance = address(this).balance >= 0;
         bool hasPlayers = s_players.length > 0;
         upkeepNeeded = isOpen && timePassed && hasBalance && hasPlayers;
@@ -120,7 +123,16 @@ contract Raffle is VRFConsumerBaseV2Plus {
     //get random number
     //use random number to pick winner
     // Automate the Raffle
-    function pickWinner() external {
+    function performUpkeep(bytes calldata /*performData */) external {
+        (bool upkeepNeeded, ) = checkUpkeep("");
+        if (!upkeepNeeded) {
+            revert Raffle__UpKeepNotNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_raffleStatus)
+            );
+        }
+
         require(
             block.timestamp - s_lastTimeStamp > i_inteval,
             Raffle__StillTimeLeftToAnnounceWinner()
@@ -139,11 +151,11 @@ contract Raffle is VRFConsumerBaseV2Plus {
                 )
             });
 
-        uint256 requestID = s_vrfCoordinator.requestRandomWords(request);
+        s_vrfCoordinator.requestRandomWords(request);
     }
 
     function fulfillRandomWords(
-        uint256 requestId,
+        uint256 /*requestId*/,
         uint256[] calldata randomWords
     ) internal override {
         uint256 indexOfPlayer = randomWords[0] % s_players.length;
