@@ -54,7 +54,7 @@ contract HelperConfig is Script, CodeConstants {
         return getConfigByChainId(block.chainid);
     }
 
-    function getSepoliaEthConfig() public returns (NetworkConfig memory) {
+    function getSepoliaEthConfig() public pure returns (NetworkConfig memory) {
         return
             NetworkConfig({
                 entranceFee: 0.01 ether,
@@ -84,14 +84,12 @@ contract HelperConfig is Script, CodeConstants {
         }
 
         //Deploy mocks
-
         vm.startBroadcast();
         VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock = new VRFCoordinatorV2_5Mock(
                 MOCK_BASE_FEE,
                 MOCK_GAS_FEE,
                 MOCK_WEI_PER_UINT_LINK
             );
-        vm.stopBroadcast();
 
         localNetworkConfig = NetworkConfig({
             entranceFee: 0.01 ether,
@@ -101,5 +99,7 @@ contract HelperConfig is Script, CodeConstants {
             keyhash: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
             gasLimit: 500000
         });
+        vm.stopBroadcast();
+        return localNetworkConfig;
     }
 }

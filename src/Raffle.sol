@@ -106,7 +106,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     ) public view returns (bool upkeepNeeded, bytes memory /* performData */) {
         bool isOpen = s_raffleStatus == RaffleStatus.OPEN;
         bool timePassed = (block.timestamp - s_lastTimeStamp) >= i_inteval;
-        bool hasBalance = address(this).balance >= 0;
+        bool hasBalance = address(this).balance > 0;
         bool hasPlayers = s_players.length > 0;
         upkeepNeeded = isOpen && timePassed && hasBalance && hasPlayers;
         return (upkeepNeeded, "");
@@ -180,5 +180,9 @@ contract Raffle is VRFConsumerBaseV2Plus {
 
     function getRaffleStatus() external view returns (RaffleStatus) {
         return s_raffleStatus;
+    }
+
+    function getPlayer(uint256 index) external view returns (address) {
+        return s_players[index];
     }
 }
