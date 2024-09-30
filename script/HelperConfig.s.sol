@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import {Script} from "../lib/forge-std/src/Script.sol";
 import {Raffle} from "../src/Raffle.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {LinkToken} from "test/mocks/LinkToken.sol";
 
 abstract contract CodeConstants {
     /**
@@ -28,6 +29,7 @@ contract HelperConfig is Script, CodeConstants {
         uint256 subcriptionID;
         bytes32 keyhash;
         uint32 gasLimit;
+        address link;
     }
 
     NetworkConfig public localNetworkConfig;
@@ -62,7 +64,8 @@ contract HelperConfig is Script, CodeConstants {
                 vrfCoordinator: 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625,
                 subcriptionID: 0,
                 keyhash: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
-                gasLimit: 500000
+                gasLimit: 500000,
+                link: 0x779877A7B0D9E8603169DdbD7836e478b4624789
             });
     }
 
@@ -90,6 +93,7 @@ contract HelperConfig is Script, CodeConstants {
                 MOCK_GAS_FEE,
                 MOCK_WEI_PER_UINT_LINK
             );
+        LinkToken linkToken = new LinkToken();
 
         localNetworkConfig = NetworkConfig({
             entranceFee: 0.01 ether,
@@ -97,7 +101,8 @@ contract HelperConfig is Script, CodeConstants {
             vrfCoordinator: address(vrfCoordinatorV2_5Mock),
             subcriptionID: 0,
             keyhash: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
-            gasLimit: 500000
+            gasLimit: 500000,
+            link: address(linkToken)
         });
         vm.stopBroadcast();
         return localNetworkConfig;
