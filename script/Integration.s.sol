@@ -5,6 +5,8 @@ import {Script, console} from "../lib/forge-std/src/Script.sol";
 import {HelperConfig, CodeConstants} from "./HelperConfig.s.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {LinkToken} from "../test/mocks/LinkToken.sol";
+import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
+import {Raffle} from "../src/Raffle.sol";
 
 contract CreateSubscription is Script {
     function run() public {
@@ -33,7 +35,7 @@ contract CreateSubscription is Script {
     }
 }
 
-contract FundSubscriptionUsingConfig is Script, CodeConstants {
+contract FundSubscription is Script, CodeConstants {
     uint256 public constant FUND_AMOUNT = 3 ether;
 
     function fundSubscriptionUsingConfig() public {
@@ -77,5 +79,38 @@ contract FundSubscriptionUsingConfig is Script, CodeConstants {
 
     function run() external {
         fundSubscriptionUsingConfig();
+    }
+}
+
+contract AddConsumer is Script {
+    function run() external {
+        address mostRecentlyDeplyed = DevOpsTools.get_most_recent_deployment(
+            "Raffle",
+            block.chainid
+        );
+        addConsumerUsingConfig(mostRecentlyDeplyed);
+    }
+
+    function addConsumerUsingConfig(address contractAddress) public {
+        HelperConfig helperConfig = new HelperConfig();
+        address vrfCoordinator = helperConfig.getConfig().vrfCoordinator;
+        uint256 subId = helperConfig.getConfig().subcriptionID;
+        addConsumer(contractAddress, vrfCoordinator, subId);
+    }
+
+    function addConsumer(
+        address contractAddress,
+        address vrfCoordinator,
+        uint256 subId
+    ) public {
+        console.log("Using contract address: ", contractAddress);
+        console.log("Using vrfCoordinator: ", vrfCoordinator);
+        console.log("On ChainID: ", block.chainid);
+        vm.startBroadcast();
+        VRFCoordinatorV2_5Mock(vrfCoordinator).addConsumer(
+            subId,
+            contractAddress
+        );
+        vm.stopBroadcast();
     }
 }

@@ -58,7 +58,7 @@ contract RaffleContractTesting is Test {
         assert(playerAddressInArray == PLAYER);
     }
 
-    function testRaffleEventemmited() public {
+    function testRaffleEventEmmited() public {
         vm.prank(PLAYER);
         vm.expectEmit(true, false, false, false);
         emit RaffleEntered(PLAYER);
@@ -74,8 +74,15 @@ contract RaffleContractTesting is Test {
 
         // try to enter
 
+        vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
         vm.prank(PLAYER);
         raffle.enterRaffle{value: entranceFee}();
-        vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
+    }
+
+    function testTimeLeftForAnnouncemet() public {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        raffle.performUpkeep("");
+        vm.expectRevert(Raffle.Raffle__StillTimeLeftToAnnounceWinner.selector);
     }
 }
