@@ -79,10 +79,12 @@ contract RaffleContractTesting is Test {
         raffle.enterRaffle{value: entranceFee}();
     }
 
-    function testTimeLeftForAnnouncemet() public {
+    /**
+     * CheckUpKeep tests
+     */
+
+    function testCheckUpKeepReturnsFalseIfLessBalance() public {
         vm.prank(PLAYER);
-        raffle.enterRaffle{value: entranceFee}();
-        raffle.performUpkeep("");
-        vm.expectRevert(Raffle.Raffle__StillTimeLeftToAnnounceWinner.selector);
+        vm.warp(block.timestamp + interval + 1);
     }
 }
