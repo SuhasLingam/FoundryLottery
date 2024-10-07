@@ -40,9 +40,7 @@ contract HelperConfig is Script, CodeConstants {
         networkConfigs[SEPOLIA_CHAIN_ID] = getSepoliaEthConfig();
     }
 
-    function getConfigByChainId(
-        uint256 chainID
-    ) public returns (NetworkConfig memory) {
+    function getConfigByChainId(uint256 chainID) public returns (NetworkConfig memory) {
         if (networkConfigs[chainID].vrfCoordinator != address(0)) {
             return networkConfigs[chainID];
         } else if (chainID == LOCAL_CHAIN_ID) {
@@ -57,16 +55,15 @@ contract HelperConfig is Script, CodeConstants {
     }
 
     function getSepoliaEthConfig() public pure returns (NetworkConfig memory) {
-        return
-            NetworkConfig({
-                entranceFee: 0.01 ether,
-                interval: 60,
-                vrfCoordinator: 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625,
-                subcriptionID: 0,
-                keyhash: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
-                gasLimit: 500000,
-                link: 0x779877A7B0D9E8603169DdbD7836e478b4624789
-            });
+        return NetworkConfig({
+            entranceFee: 0.01 ether,
+            interval: 60,
+            vrfCoordinator: 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625,
+            subcriptionID: 0,
+            keyhash: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
+            gasLimit: 500000,
+            link: 0x779877A7B0D9E8603169DdbD7836e478b4624789
+        });
     }
 
     // function getMainetEthConfig() public returns (NetworkConfig memory) {
@@ -88,11 +85,8 @@ contract HelperConfig is Script, CodeConstants {
 
         //Deploy mocks
         vm.startBroadcast();
-        VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock = new VRFCoordinatorV2_5Mock(
-                MOCK_BASE_FEE,
-                MOCK_GAS_FEE,
-                MOCK_WEI_PER_UINT_LINK
-            );
+        VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock =
+            new VRFCoordinatorV2_5Mock(MOCK_BASE_FEE, MOCK_GAS_FEE, MOCK_WEI_PER_UINT_LINK);
         LinkToken linkToken = new LinkToken();
 
         localNetworkConfig = NetworkConfig({
