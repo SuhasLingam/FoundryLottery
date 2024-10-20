@@ -39,7 +39,11 @@ contract Raffle is VRFConsumerBaseV2Plus {
     error Raffle__TransferToWinnerFailed();
     error Raffle__RaffleNotOpen();
     error Raffle__StillTimeLeftToAnnounceWinner();
-    error Raffle__UpKeepNotNeeded(uint256 balance, uint256 playersLength, uint256 raffleState);
+    error Raffle__UpKeepNotNeeded(
+        uint256 balance,
+        uint256 playersLength,
+        uint256 raffleState
+    );
 
     /**
      * Type Decalrations
@@ -101,11 +105,9 @@ contract Raffle is VRFConsumerBaseV2Plus {
      * 4. There are players registered.
      * 5. Implicity, your subscription is funded with LINK.
      */
-    function checkUpkeep(bytes memory /* checkData */ )
-        public
-        view
-        returns (bool upkeepNeeded, bytes memory /* performData */ )
-    {
+    function checkUpkeep(
+        bytes memory /* checkData */
+    ) public view returns (bool upkeepNeeded, bytes memory /* performData */) {
         bool isOpen = s_raffleStatus == RaffleStatus.OPEN;
         bool timePassed = (block.timestamp - s_lastTimeStamp) >= i_inteval;
         bool hasBalance = address(this).balance > 0;
@@ -125,30 +127,43 @@ contract Raffle is VRFConsumerBaseV2Plus {
     //get random number
     //use random number to pick winner
     // Automate the Raffle
-    function performUpkeep(bytes calldata /*performData */ ) external {
-        (bool upkeepNeeded,) = checkUpkeep("");
+    function performUpkeep(bytes calldata /*performData */) external {
+        (bool upkeepNeeded, ) = checkUpkeep("");
         if (!upkeepNeeded) {
-            revert Raffle__UpKeepNotNeeded(address(this).balance, s_players.length, uint256(s_raffleStatus));
+            revert Raffle__UpKeepNotNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_raffleStatus)
+            );
         }
 
-        require(block.timestamp - s_lastTimeStamp > i_inteval, Raffle__StillTimeLeftToAnnounceWinner());
+        require(
+            block.timestamp - s_lastTimeStamp > i_inteval,
+            Raffle__StillTimeLeftToAnnounceWinner()
+        );
         s_raffleStatus = RaffleStatus.CALCULATING;
 
-        VRFV2PlusClient.RandomWordsRequest memory request = VRFV2PlusClient.RandomWordsRequest({
-            keyHash: i_keyHash,
-            subId: i_subscriptionID,
-            requestConfirmations: REQUEST_CONFIRMATIONS,
-            callbackGasLimit: i_gasLimit,
-            numWords: MAX_WORDS,
-            extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
-        });
+        VRFV2PlusClient.RandomWordsRequest memory request = VRFV2PlusClient
+            .RandomWordsRequest({
+                keyHash: i_keyHash,
+                subId: i_subscriptionID,
+                requestConfirmations: REQUEST_CONFIRMATIONS,
+                callbackGasLimit: i_gasLimit,
+                numWords: MAX_WORDS,
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
+                )
+            });
 
         uint256 requestId = s_vrfCoordinator.requestRandomWords(request);
 
-        emit RequestedRaffleWinner(requestId)
+        emit RequestedRaffleWinner(requestId);
     }
 
-    function fulfillRandomWords(uint256, /*requestId*/ uint256[] calldata randomWords) internal override {
+    function fulfillRandomWords(
+        uint256,
+        /*requestId*/ uint256[] calldata randomWords
+    ) internal override {
         uint256 indexOfPlayer = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexOfPlayer];
         s_recentWinner = recentWinner;
@@ -157,7 +172,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         s_lastTimeStamp = block.timestamp;
         emit PickedWinner(s_recentWinner);
         //Transfer To the winner
-        (bool success,) = recentWinner.call{value: address(this).balance}("");
+        (bool success, ) = recentWinner.call{value: address(this).balance}("");
         require(success, Raffle__TransferToWinnerFailed());
     }
 
